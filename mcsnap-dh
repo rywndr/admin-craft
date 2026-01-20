@@ -1,198 +1,111 @@
 #!/bin/bash
-
 # Usage: ./mcsnap-dh [path_to_server_dir]
 
-
 # Where baks stored (orgs by server dir name)
-
-BACKUP_ROOT = "$HOME/game-servers/.bak/minecraft"
-
-TIMESTAMP = $(date +%Y%m%d_%H%M%S)
-
-
-COMPRESSION_LEVEL = 6
-
-PARALLEL_THREADS = 4
-
+BACKUP_ROOT="$HOME/game-servers/.bak/minecraft"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+COMPRESSION_LEVEL=6
+PARALLEL_THREADS=4
 
 # Help
-
 show_help() {
-
-	echo "Usage: $(basename "$0") [SERVER_DIR]"
-
-	echo ""
-
-	echo "Args:"
-
-	echo " SERVER_DIR Path to minecraft server root dir"
-
-	echo " (or use '.' to use current dir or provide absoule path)"
-
-	echo ""
-
-}
-
-
-format_bytes() {
-
-	# Convert to human readable size
-
-	numfmt --to = iec --suffix = B --padding = 7 "$1"
-
-}
-
-
-# Args check
-
-if [[ "$1" = = "-h" | | "$1" = = "--help" ]] ; then
-
-	    show_help
-
-	        exit 0
-
-fi
-
-
-# Deps check (needs pv)
-
-if ! command -v pv & > /dev/null ; then
-
-	    echo "Error: 'pv' is required for the progress bar."
-
-	        echo "Please install it: sudo apt install pv"
-
-		    exit 1
-
-fi
-
-
-# Path resolve
-
-TARGET_PATH = "$1"
-
-
-# Check if dir exists
-
-if [ ! -d "$TARGET_PATH" ] ; then
-
-	    echo "Error: Directory not found: $TARGET_PATH"
-
-	        exit 1
-
-fi
-
-
-# Get absolute path
-
-SERVER_DIR = $(cd "$TARGET_PATH" & & pwd)
-
-SERVER_NAME = $(basename "$SERVER_DIR")
-
-WORLD_DIR = "$SERVER_DIR/world"
-
-
-# Check if 'world' directory exists
-
-if [ ! -d "$WORLD_DIR" ] ; then
-
-	    echo "Error: No 'world' folder found in: $SERVER_DIR"
-
-	        exit 1
-
-fi
-
-# Check if 'world' is a valid Minecraft world
-
-if [ ! -f "$WORLD_DIR/level.dat" ] ; then
-
-	    echo "Error: Folder is not a valid Minecraft world."
-
-	        echo "(Missing level.dat in $WORLD_DIR)"
-
-		    exit 1
-
-fi
-
-
-# Create backup dir for "THIS" server
-
-DEST_DIR = "$BACKUP_ROOT/$SERVER_NAME"
-
-mkdir -p "$DEST_DIR"
-
-BACKUP_FILE = "$DEST_DIR/world_backup_$TIMESTAMP.tar.gz"
-
-
-# Select Compression Tool
-
-if command -v pigz & > /dev/null ; then
-
-	    COMPRESS_CMD = "pigz -$COMPRESSION_LEVEL -p $PARALLEL_THREADS"
-
-	        else
-
-			    COMPRESS_CMD = "gzip -$COMPRESSION_LEVEL"
-
-fi
-
-
-# Calc Size
-
-RAW_SIZE_BYTES = $(du -sb "$WORLD_DIR" | cut -f1)
-
-RAW_SIZE_HUMAN = $(format_bytes $RAW_SIZE_BYTES)
-
-echo "Backing up: $SERVER_NAME"
-
-echo "Source: $WORLD_DIR"
-
-echo "World Size: $RAW_SIZE_HUMAN"
-
-echo ""
-
-tar -c -C "$SERVER_DIR" world | pv -s "$RAW_SIZE_BYTES" | $COMPRESS_CMD > "$BACKUP_FILE"
-
-BACKUP_STATUS = $?
-
-echo ""
-
-if [ $BACKUP_STATUS -eq 0 ] ; then
-
-	    # Get Backup Size
-
-	        BACKUP_SIZE_BYTES = $(du -sb "$BACKUP_FILE" | cut -f1)
-
-		    BACKUP_SIZE_HUMAN = $(format_bytes $BACKUP_SIZE_BYTES)
-
-		        # Calc Compression Percentage
-
-			    # form: 100 - ((compressed / raw) * 100)
-
-			        if [ "$RAW_SIZE_BYTES" -gt 0 ] ; then
-
-					        COMPRESSION_PCT = $(awk "BEGIN {printf \"%.2f\", 100 - (($BACKUP_SIZE_BYTES / $RAW_SIZE_BYTES) * 100)}")
-
-						        else
-
-								        COMPRESSION_PCT = "0"
-
-									    fi
-
-									        echo "Backup Completed Successfully"
-
-										    echo "Saved to: $BACKUP_FILE"
-
-										        echo "Final Size: $BACKUP_SIZE_HUMAN (Reduced by $COMPRESSION_PCT%)"
-
+	    echo "Usage: $(basename "$0") [SERVER_DIR]"
+	        echo ""
+		    echo "Args:"
+		        echo "  SERVER_DIR  Path to minecraft server root dir"
+			    echo "              (or use '.' to use current dir or provide absolute path)"
+			        echo ""
+			}
+
+		format_bytes() {
+			    # Convert to human readable size
+			        numfmt --to=iec --suffix=B --padding=7 "$1"
+			}
+
+		# Args check
+		if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+			    show_help
+			        exit 0
+		fi
+
+		# Deps check (needs pv)
+		if ! command -v pv &> /dev/null; then
+			    echo "Error: 'pv' is required for the progress bar."
+			        echo "Please install it: sudo apt install pv"
+				    exit 1
+		fi
+
+		# Path resolve
+		TARGET_PATH="$1"
+
+		# Check if dir exists
+		if [ ! -d "$TARGET_PATH" ]; then
+			    echo "Error: Directory not found: $TARGET_PATH"
+			        exit 1
+		fi
+
+		# Get absolute path
+		SERVER_DIR=$(cd "$TARGET_PATH" && pwd)
+		SERVER_NAME=$(basename "$SERVER_DIR")
+		WORLD_DIR="$SERVER_DIR/world"
+
+		# Check if 'world' directory exists
+		if [ ! -d "$WORLD_DIR" ]; then
+			    echo "Error: No 'world' folder found in: $SERVER_DIR"
+			        exit 1
+		fi
+
+		# Check if 'world' is a valid Minecraft world
+		if [ ! -f "$WORLD_DIR/level.dat" ]; then
+			    echo "Error: Folder is not a valid Minecraft world."
+			        echo "(Missing level.dat in $WORLD_DIR)"
+				    exit 1
+		fi
+
+		# Create backup dir for "THIS" server
+		DEST_DIR="$BACKUP_ROOT/$SERVER_NAME"
+		mkdir -p "$DEST_DIR"
+		BACKUP_FILE="$DEST_DIR/world_backup_$TIMESTAMP.tar.gz"
+
+		# Select Compression Tool
+		if command -v pigz &> /dev/null; then
+			    COMPRESS_CMD="pigz -$COMPRESSION_LEVEL -p $PARALLEL_THREADS"
+		    else
+			        COMPRESS_CMD="gzip -$COMPRESSION_LEVEL"
+		fi
+
+		# Calc Size
+		RAW_SIZE_BYTES=$(du -sb "$WORLD_DIR" | cut -f1)
+		RAW_SIZE_HUMAN=$(format_bytes $RAW_SIZE_BYTES)
+
+		echo "Backing up: $SERVER_NAME"
+		echo "Source: $WORLD_DIR"
+		echo "World Size: $RAW_SIZE_HUMAN"
+		echo ""
+
+		tar -c -C "$SERVER_DIR" world | pv -s "$RAW_SIZE_BYTES" | $COMPRESS_CMD > "$BACKUP_FILE"
+		BACKUP_STATUS=$?
+
+		echo ""
+		if [ $BACKUP_STATUS -eq 0 ]; then
+			    # Get Backup Size
+			        BACKUP_SIZE_BYTES=$(du -sb "$BACKUP_FILE" | cut -f1)
+				    BACKUP_SIZE_HUMAN=$(format_bytes $BACKUP_SIZE_BYTES)
+				        
+				        # Calc Compression Percentage
+					    # form: 100 - ((compressed / raw) * 100)
+					        if [ "$RAW_SIZE_BYTES" -gt 0 ]; then
+							        COMPRESSION_PCT=$(awk "BEGIN {printf \"%.2f\", 100 - (($BACKUP_SIZE_BYTES / $RAW_SIZE_BYTES) * 100)}")
+								    else
+									            COMPRESSION_PCT="0"
+										        fi
+											    
+											    echo "Backup Completed Successfully"
+											        echo "Saved to: $BACKUP_FILE"
+												    echo "Final Size: $BACKUP_SIZE_HUMAN (Reduced by $COMPRESSION_PCT%)"
 											    else
-
 												        echo "Backup Failed"
-
 													    # Remove partial file
-
 													        rm -f "$BACKUP_FILE"
-
 														    exit 1
-
-fi
+		fi

@@ -2,7 +2,7 @@
 # Usage: ./mcsnap-dh [path_to_server_dir]
 
 # Where baks stored (orgs by server dir name)
-BACKUP_ROOT="$HOME/game-servers/.bak/minecraft"
+BACKUP_ROOT="/mnt/data/gsrv-s/minecraft/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 COMPRESSION_LEVEL=6
 PARALLEL_THREADS=4
@@ -75,7 +75,7 @@ show_help() {
 		fi
 
 		# Calc Size
-		RAW_SIZE_BYTES=$(du -sb "$WORLD_DIR" | cut -f1)
+		RgW_SIZE_BYTES=$(du -sb "$WORLD_DIR" | cut -f1)
 		RAW_SIZE_HUMAN=$(format_bytes $RAW_SIZE_BYTES)
 
 		echo "Backing up: $SERVER_NAME"

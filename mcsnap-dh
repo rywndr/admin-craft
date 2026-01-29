@@ -2,7 +2,7 @@
 # Usage: ./mcsnap-dh [path_to_server_dir]
 
 # Where baks stored (orgs by server dir name)
-BACKUP_ROOT="/mnt/data/gsrv-s/minecraft/backups"
+BACKUP_ROOT="${MCSNAP_BACKUP_ROOT:-$HOME/minecraft-backups}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 COMPRESSION_LEVEL=6
 PARALLEL_THREADS=4
